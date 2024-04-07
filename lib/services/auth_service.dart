@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:parentalctrl/models/childdto.dart';
+import 'package:parentalctrl/models/parentdto.dart';
+import 'package:parentalctrl/models/user.dart';
 
 // firebase authentication instance
 class AuthService {
@@ -37,7 +40,7 @@ class AuthService {
     return false;
   }
 
-  Future<String> registerParent(String? firstName, String? lastName,
+  Future<ParentDTO> registerParent(String? firstName, String? lastName,
       String? email, String? password) async {
     if (email != null &&
         email.isNotEmpty &&
@@ -49,7 +52,7 @@ class AuthService {
         lastName.isNotEmpty) {
       try {
         bool checkParent = await checkParentEmailExists(email);
-        if (checkParent) return "This email already exists !";
+        if (checkParent) return ParentDTO('This email already exists !', null);
         _auth.createUserWithEmailAndPassword(email: email, password: password);
         ref.child('/parents').push().set({
           'firstName': firstName.trim(),
@@ -57,18 +60,19 @@ class AuthService {
           'email': email.trim(),
           'password': password.trim(),
         });
-        return 'Account created successfully !';
+        return ParentDTO('Account created successfully !',
+            Parent(firstName, lastName, email));
       } on FirebaseAuthException catch (error) {
         String? res = error.message ?? '';
-        if (res.isNotEmpty) return res;
-        return 'Some error happened !';
+        if (res.isNotEmpty) return ParentDTO(res, null);
+        return ParentDTO('Some error happened !', null);
       }
     } else {
-      return 'Please fill the missing fields !';
+      return ParentDTO('Please fill the missing fields !', null);
     }
   }
 
-  Future<String> registerChild(String? firstName, String? lastName,
+  Future<ChildDTO> registerChild(String? firstName, String? lastName,
       String? parentEmail, String? email, String? password) async {
     if (email != null &&
         email.isNotEmpty &&
@@ -82,9 +86,13 @@ class AuthService {
         parentEmail.isNotEmpty) {
       try {
         bool checkParent = await checkParentEmailExists(email);
-        if (!checkParent) return "The parent email does not exist !";
+        if (!checkParent) {
+          return ChildDTO("The parent email does not exist !", null);
+        }
         bool checkChild = await checkChildEmailExists(email);
-        if (checkChild) return "The child email already exists !";
+        if (checkChild) {
+          return ChildDTO("The child email already exists !", null);
+        }
         _auth.createUserWithEmailAndPassword(email: email, password: password);
         ref.child('/children').push().set({
           'firstName': firstName,
@@ -93,14 +101,17 @@ class AuthService {
           'email': email,
           'password': password
         });
-        return 'Account created successfully !';
+        return ChildDTO('Account created successfully !',
+            Child(firstName, lastName, email, parentEmail));
       } on FirebaseAuthException catch (error) {
         String? res = error.message ?? '';
-        if (res.isNotEmpty) return res;
-        return 'Some error happened !';
+        if (res.isNotEmpty) return ChildDTO(res, null);
+        ;
+        return ChildDTO('Some error happened !', null);
       }
-    } else
-      return 'Please fill the missing fields !';
+    } else {
+      return ChildDTO('Please fill the missing fields !', null);
+    }
   }
 
   Future<bool> signOut() async {

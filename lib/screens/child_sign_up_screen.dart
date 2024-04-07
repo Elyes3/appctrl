@@ -1,21 +1,23 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:parentalctrl/models/childdto.dart';
+import 'package:parentalctrl/screens/login_screen.dart';
 import 'package:parentalctrl/screens/main_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
 
-class SignUp extends StatefulWidget {
-  const SignUp({super.key});
+class ChildSignUpScreen extends StatefulWidget {
+  const ChildSignUpScreen({super.key});
 
   @override
-  State<SignUp> createState() => _SignUpState();
+  State<ChildSignUpScreen> createState() => _ChildSignUpScreenState();
 }
 
-class _SignUpState extends State<SignUp> {
+class _ChildSignUpScreenState extends State<ChildSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, String> _data = {
     'firstName': '',
     'lastName': '',
+    'parentEmail': '',
     'email': '',
     'password': ''
   };
@@ -99,6 +101,39 @@ class _SignUpState extends State<SignUp> {
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Text(
+                                  'Parent Email',
+                                  style: TextStyle(fontFamily: 'MarkPro'),
+                                )
+                              ]),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                              onSaved: (value) {
+                                setState(() {
+                                  _data["parentEmail"] = value ?? '';
+                                });
+                              },
+                              decoration: InputDecoration(
+                                  hintText: 'john.doe@xyz.com',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                      borderSide: const BorderSide(
+                                          color: Colors.blue))),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter an email';
+                                }
+                                String emailPattern =
+                                    r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+";
+                                RegExp regExp = RegExp(emailPattern);
+                                if (!regExp.hasMatch(value)) {
+                                  return 'Please write a valid email address';
+                                }
+                                return null;
+                              }),
+                          const Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text(
                                   'Email',
                                   style: TextStyle(fontFamily: 'MarkPro'),
                                 )
@@ -128,7 +163,7 @@ class _SignUpState extends State<SignUp> {
                                 }
                                 return null;
                               }),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
                           const Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
@@ -157,7 +192,7 @@ class _SignUpState extends State<SignUp> {
                                 }
                                 return null;
                               }),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
                           Row(
                             children: [
                               Expanded(
@@ -166,28 +201,24 @@ class _SignUpState extends State<SignUp> {
                                       onPressed: () async {
                                         if (_formKey.currentState!.validate()) {
                                           _formKey.currentState!.save();
-
-                                          if (_data["email"] != null &&
-                                              _data["password"] != null) {
-                                            User? user = await _auth.register(
-                                                _data["firstName"],
-                                                _data["lastName"],
-                                                _data["email"],
-                                                _data["passowrd"]);
-                                            if (!context.mounted) return;
-                                            if (user != null) {
-                                              Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const MainScreen()));
-                                            } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                content:
-                                                    Text('Failed to sign in:'),
-                                              ));
-                                            }
+                                          ChildDTO parent =
+                                              await _auth.registerChild(
+                                                  _data["firstName"],
+                                                  _data["lastName"],
+                                                  _data["parentEmail"],
+                                                  _data["email"],
+                                                  _data["passowrd"]);
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                            content: Text(parent.message),
+                                          ));
+                                          if (parent.user != null) {
+                                            Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const MainScreen()));
                                           }
                                         }
                                       },
@@ -203,7 +234,7 @@ class _SignUpState extends State<SignUp> {
                                             MaterialStatePropertyAll<Color?>(
                                                 Colors.blue),
                                       ),
-                                      child: const Text('Login',
+                                      child: const Text('Sign Up',
                                           style: TextStyle(
                                               fontSize: 16,
                                               fontFamily: 'MarkProBold',
@@ -221,7 +252,7 @@ class _SignUpState extends State<SignUp> {
                                       fontSize: 16),
                                   children: <TextSpan>[
                                 const TextSpan(
-                                    text: "Don't have an account?  ",
+                                    text: "Already have an account?  ",
                                     style: TextStyle(
                                         fontFamily: 'MarkPro',
                                         color: Colors.black)),
@@ -237,7 +268,7 @@ class _SignUpState extends State<SignUp> {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const MainScreen())),
+                                                const LoginScreen())),
                                 )
                               ]))
                         ],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parentalctrl/screens/login.dart';
+import 'package:parentalctrl/screens/parent_sign_up_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -11,13 +11,21 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'App Control',
+          style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),
+        ),
+        backgroundColor: Colors.blue,
+      ),
+      body: Center(
           child: Column(mainAxisSize: MainAxisSize.max, children: <Widget>[
         TextButton(
             onPressed: () {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const Login()));
+                  MaterialPageRoute(
+                      builder: (context) => const ParentSignUpScreen()));
             },
             style: const ButtonStyle(
               padding: MaterialStatePropertyAll<EdgeInsets>(
@@ -33,7 +41,8 @@ class _MainScreenState extends State<MainScreen> {
         TextButton(
             onPressed: () {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const Login()));
+                  MaterialPageRoute(
+                      builder: (context) => const ParentSignUpScreen()));
             },
             style: const ButtonStyle(
               padding: MaterialStatePropertyAll<EdgeInsets>(

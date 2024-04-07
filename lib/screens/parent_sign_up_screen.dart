@@ -1,20 +1,25 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:parentalctrl/models/parentdto.dart';
+import 'package:parentalctrl/screens/login_screen.dart';
 import 'package:parentalctrl/screens/main_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class ParentSignUpScreen extends StatefulWidget {
+  const ParentSignUpScreen({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<ParentSignUpScreen> createState() => _ParentSignUpScreenState();
 }
 
-class _LoginState extends State<Login> {
+class _ParentSignUpScreenState extends State<ParentSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final Map<String, String> _data = {
+    'firstName': '',
+    'lastName': '',
+    'email': '',
+    'password': ''
+  };
   final _auth = AuthService();
   @override
   Widget build(BuildContext context) {
@@ -41,6 +46,60 @@ class _LoginState extends State<Login> {
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Text(
+                                  'First Name',
+                                  style: TextStyle(fontFamily: 'MarkPro'),
+                                )
+                              ]),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                              onSaved: (value) {
+                                setState(() {
+                                  _data["firstName"] = value ?? '';
+                                });
+                              },
+                              decoration: InputDecoration(
+                                  hintText: 'John',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                      borderSide: const BorderSide(
+                                          color: Colors.blue))),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your first name';
+                                }
+                                return null;
+                              }),
+                          const Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Last Name',
+                                  style: TextStyle(fontFamily: 'MarkPro'),
+                                )
+                              ]),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                              onSaved: (value) {
+                                setState(() {
+                                  _data["lastName"] = value ?? '';
+                                });
+                              },
+                              decoration: InputDecoration(
+                                  hintText: 'Doe',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                      borderSide: const BorderSide(
+                                          color: Colors.blue))),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your last name';
+                                }
+                                return null;
+                              }),
+                          const Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text(
                                   'Email',
                                   style: TextStyle(fontFamily: 'MarkPro'),
                                 )
@@ -49,7 +108,7 @@ class _LoginState extends State<Login> {
                           TextFormField(
                               onSaved: (value) {
                                 setState(() {
-                                  _email = value ?? '';
+                                  _data["email"] = value ?? '';
                                 });
                               },
                               decoration: InputDecoration(
@@ -83,7 +142,7 @@ class _LoginState extends State<Login> {
                           TextFormField(
                               onSaved: (value) {
                                 setState(() {
-                                  _password = value ?? '';
+                                  _data["password"] = value ?? '';
                                 });
                               },
                               decoration: InputDecoration(
@@ -108,21 +167,23 @@ class _LoginState extends State<Login> {
                                       onPressed: () async {
                                         if (_formKey.currentState!.validate()) {
                                           _formKey.currentState!.save();
-                                          User? user = await _auth.login(
-                                              _email, _password);
+                                          ParentDTO parent =
+                                              await _auth.registerParent(
+                                                  _data["firstName"],
+                                                  _data["lastName"],
+                                                  _data["email"],
+                                                  _data["passowrd"]);
                                           if (!context.mounted) return;
-                                          if (user != null) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                            content: Text(parent.message),
+                                          ));
+                                          if (parent.user != null) {
                                             Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
                                                         const MainScreen()));
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(const SnackBar(
-                                              content:
-                                                  Text('Failed to sign in:'),
-                                            ));
                                           }
                                         }
                                       },
@@ -138,7 +199,7 @@ class _LoginState extends State<Login> {
                                             MaterialStatePropertyAll<Color?>(
                                                 Colors.blue),
                                       ),
-                                      child: const Text('Login',
+                                      child: const Text('Sign Up',
                                           style: TextStyle(
                                               fontSize: 16,
                                               fontFamily: 'MarkProBold',
@@ -156,7 +217,7 @@ class _LoginState extends State<Login> {
                                       fontSize: 16),
                                   children: <TextSpan>[
                                 const TextSpan(
-                                    text: "Don't have an account?  ",
+                                    text: 'Already have an account?  ',
                                     style: TextStyle(
                                         fontFamily: 'MarkPro',
                                         color: Colors.black)),
@@ -172,7 +233,7 @@ class _LoginState extends State<Login> {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const MainScreen())),
+                                                const LoginScreen())),
                                 )
                               ]))
                         ],

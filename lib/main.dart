@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentalctrl/firebase_options.dart';
-import 'package:parentalctrl/screens/login.dart';
+import 'package:parentalctrl/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:parentalctrl/models/phone.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -20,13 +20,13 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => PhoneProvider(),
       child: MaterialApp(
-          title: 'Flutter Demo',
+          title: 'App Control',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
                 seedColor: const Color.fromARGB(255, 77, 91, 174)),
             useMaterial3: true,
           ),
-          home: const Login()),
+          home: const LoginScreen()),
     );
   }
 }
