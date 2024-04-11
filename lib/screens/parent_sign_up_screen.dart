@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:parentalctrl/models/parentdto.dart';
+import 'package:parentalctrl/models/message.dart';
 import 'package:parentalctrl/screens/login_screen.dart';
-import 'package:parentalctrl/screens/main_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
 
@@ -167,23 +166,24 @@ class _ParentSignUpScreenState extends State<ParentSignUpScreen> {
                                       onPressed: () async {
                                         if (_formKey.currentState!.validate()) {
                                           _formKey.currentState!.save();
-                                          ParentDTO parent =
+                                          Message message =
                                               await _auth.registerParent(
+                                                  context,
                                                   _data["firstName"],
                                                   _data["lastName"],
                                                   _data["email"],
-                                                  _data["passowrd"]);
+                                                  _data["password"]);
                                           if (!context.mounted) return;
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(
-                                            content: Text(parent.message),
+                                            content: Text(message.message),
                                           ));
-                                          if (parent.user != null) {
+                                          if (message.status == 201) {
                                             Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
-                                                        const MainScreen()));
+                                                        const LoginScreen()));
                                           }
                                         }
                                       },
@@ -222,7 +222,7 @@ class _ParentSignUpScreenState extends State<ParentSignUpScreen> {
                                         fontFamily: 'MarkPro',
                                         color: Colors.black)),
                                 TextSpan(
-                                  text: 'Sign up Here',
+                                  text: 'Login here',
                                   style: const TextStyle(
                                       fontFamily: 'MarkPro',
                                       fontSize: 16,

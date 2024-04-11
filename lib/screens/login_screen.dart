@@ -1,8 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:parentalctrl/providers/user_provider.dart';
+import 'package:parentalctrl/screens/child_home_screen.dart';
 import 'package:parentalctrl/screens/main_screen.dart';
+import 'package:parentalctrl/screens/parent_home_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,10 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _auth = AuthService();
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
         appBar: AppBar(
           title: const Text(
-            'App Control',
+            'Login',
             style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),
           ),
           backgroundColor: Colors.blue,
@@ -108,22 +112,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onPressed: () async {
                                         if (_formKey.currentState!.validate()) {
                                           _formKey.currentState!.save();
-                                          User? user = await _auth.login(
-                                              _email, _password);
+                                          String message = await _auth.login(
+                                              context, _email, _password);
                                           if (!context.mounted) return;
-                                          if (user != null) {
-                                            Navigator.pushReplacement(
+                                          if (userProvider.user != null) {
+                                            Navigator.pushAndRemoveUntil(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
-                                                        const MainScreen()));
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(const SnackBar(
-                                              content:
-                                                  Text('Failed to sign in:'),
-                                            ));
+                                                        !userProvider
+                                                            .user!.isParent
+                                                        ? const ChildHomeScreen()
+                                                        : const ParentHomeScreen()),
+                                                (Route route) => false);
                                           }
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                            content: Text(message),
+                                          ));
                                         }
                                       },
                                       style: const ButtonStyle(

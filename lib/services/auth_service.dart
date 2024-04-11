@@ -1,47 +1,78 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:parentalctrl/models/childdto.dart';
-import 'package:parentalctrl/models/parentdto.dart';
+import 'package:flutter/material.dart';
+import 'package:parentalctrl/models/message.dart';
 import 'package:parentalctrl/models/user.dart';
+import 'package:parentalctrl/providers/user_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // firebase authentication instance
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
-  Future<User?> login(String email, String password) async {
+  Future<String> fetchUserDataByRole(
+      User? user, UserProvider userProvider) async {
+    print("GOT HERE");
+    if (user != null) {
+      IdTokenResult tokenResult = await user.getIdTokenResult();
+      Map<String, dynamic> customClaims =
+          tokenResult.claims as Map<String, dynamic>;
+      bool isParent = customClaims['isParent'] ?? false;
+      DataSnapshot snapshot = await ref
+          .child(isParent ? 'parents' : 'children')
+          .child(user.uid)
+          .get();
+      if (snapshot.exists) {
+        Map<String, dynamic> userData =
+            Map<String, dynamic>.from(snapshot.value as Map);
+        userProvider.setUser(UserData(
+            user.uid,
+            userData['email'],
+            userData['firstName'],
+            userData['lastName'],
+            isParent ? userData["childrenIds"] : null,
+            isParent));
+      } else {
+        return 'Error while fetching user data !';
+      }
+    } else {
+      userProvider.setUser(null);
+      return 'This user does not exist !';
+    }
+    print("GOT HERE");
+    return 'Logged In Successfully !';
+  }
+
+  Future<String> login(
+      BuildContext context, String email, String password) async {
     try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
           email: email.trim(), password: password.trim());
-      return userCredential.user;
-    } catch (error) {
-      return null;
+      User? user = userCredential.user;
+
+      String response = await fetchUserDataByRole(user, userProvider);
+      return response;
+    } on FirebaseAuthException catch (error) {
+      return error.message ?? '';
     }
   }
 
-  Future<bool> checkParentEmailExists(String email) async {
-    final DatabaseEvent parentsEvent =
-        await ref.child("parents").orderByChild("email").equalTo(email).once();
-    final DataSnapshot parentsSnapshot = parentsEvent.snapshot;
-    print(parentsSnapshot.value);
-    if (parentsSnapshot.value != null) {
-      return true;
-    }
-    return false;
+  void getAuthenticationStatus(BuildContext context) {
+    print("caLLed");
+    UserProvider userProvider =
+        Provider.of<UserProvider>(context, listen: false);
+    _auth.authStateChanges().listen((User? user) async {
+      await fetchUserDataByRole(user, userProvider);
+    });
   }
 
-  Future<bool> checkChildEmailExists(String email) async {
-    final DatabaseEvent parentsEvent =
-        await ref.child("children").orderByChild("email").equalTo(email).once();
-    final DataSnapshot parentsSnapshot = parentsEvent.snapshot;
-    print(parentsSnapshot.value);
-    if (parentsSnapshot.value != null) {
-      return true;
-    }
-    return false;
-  }
-
-  Future<ParentDTO> registerParent(String? firstName, String? lastName,
-      String? email, String? password) async {
+  Future<Message> registerParent(BuildContext context, String? firstName,
+      String? lastName, String? email, String? password) async {
+    String endpoint = 'users/parent/signup';
     if (email != null &&
         email.isNotEmpty &&
         password != null &&
@@ -50,30 +81,37 @@ class AuthService {
         firstName.isNotEmpty &&
         lastName != null &&
         lastName.isNotEmpty) {
+      String? baseUrl = dotenv.env['BASE_URL'];
+      var url = Uri.parse('$baseUrl$endpoint');
       try {
-        bool checkParent = await checkParentEmailExists(email);
-        if (checkParent) return ParentDTO('This email already exists !', null);
-        _auth.createUserWithEmailAndPassword(email: email, password: password);
-        ref.child('/parents').push().set({
-          'firstName': firstName.trim(),
-          'lastName': lastName.trim(),
-          'email': email.trim(),
-          'password': password.trim(),
-        });
-        return ParentDTO('Account created successfully !',
-            Parent(firstName, lastName, email));
-      } on FirebaseAuthException catch (error) {
-        String? res = error.message ?? '';
-        if (res.isNotEmpty) return ParentDTO(res, null);
-        return ParentDTO('Some error happened !', null);
+        var response = await http.post(url,
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: json.encode({
+              "email": email,
+              "password": password,
+              "firstName": firstName,
+              "lastName": lastName
+            }));
+        dynamic jsonResponse = json.decode(response.body);
+        return Message(jsonResponse['message'], response.statusCode);
+      } catch (e) {
+        return Message(e.toString(), null);
       }
     } else {
-      return ParentDTO('Please fill the missing fields !', null);
+      return Message('Please fill the missing fields !', null);
     }
   }
 
-  Future<ChildDTO> registerChild(String? firstName, String? lastName,
-      String? parentEmail, String? email, String? password) async {
+  Future<Message> registerChild(
+      BuildContext context,
+      String? firstName,
+      String? lastName,
+      String? parentEmail,
+      String? email,
+      String? password) async {
+    String endpoint = 'users/child/signup';
     if (email != null &&
         email.isNotEmpty &&
         password != null &&
@@ -85,32 +123,26 @@ class AuthService {
         parentEmail != null &&
         parentEmail.isNotEmpty) {
       try {
-        bool checkParent = await checkParentEmailExists(email);
-        if (!checkParent) {
-          return ChildDTO("The parent email does not exist !", null);
-        }
-        bool checkChild = await checkChildEmailExists(email);
-        if (checkChild) {
-          return ChildDTO("The child email already exists !", null);
-        }
-        _auth.createUserWithEmailAndPassword(email: email, password: password);
-        ref.child('/children').push().set({
-          'firstName': firstName,
-          'lastName': lastName,
-          'parentEmail': parentEmail,
-          'email': email,
-          'password': password
-        });
-        return ChildDTO('Account created successfully !',
-            Child(firstName, lastName, email, parentEmail));
-      } on FirebaseAuthException catch (error) {
-        String? res = error.message ?? '';
-        if (res.isNotEmpty) return ChildDTO(res, null);
-        ;
-        return ChildDTO('Some error happened !', null);
+        String? baseUrl = dotenv.env['BASE_URL'];
+        var url = Uri.parse('$baseUrl$endpoint');
+        var response = await http.post(url,
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: json.encode({
+              "email": email,
+              "password": password,
+              "parentEmail": parentEmail,
+              "firstName": firstName,
+              "lastName": lastName
+            }));
+        dynamic jsonResponse = json.decode(response.body);
+        return Message(jsonResponse['message'], response.statusCode);
+      } catch (e) {
+        return Message(e.toString(), null);
       }
     } else {
-      return ChildDTO('Please fill the missing fields !', null);
+      return Message('Please fill the missing fields !', null);
     }
   }
 

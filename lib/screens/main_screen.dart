@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentalctrl/screens/child_sign_up_screen.dart';
 import 'package:parentalctrl/screens/parent_sign_up_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -14,18 +15,22 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'App Control',
+          'Choose a user',
           style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),
         ),
         backgroundColor: Colors.blue,
       ),
       body: Center(
-          child: Column(mainAxisSize: MainAxisSize.max, children: <Widget>[
+          child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
         TextButton(
             onPressed: () {
               Navigator.push(context,
                   MaterialPageRoute(
-                      builder: (context) => const ParentSignUpScreen()));
+                          builder: (context) => const ChildSignUpScreen()));
             },
             style: const ButtonStyle(
               padding: MaterialStatePropertyAll<EdgeInsets>(
@@ -38,6 +43,7 @@ class _MainScreenState extends State<MainScreen> {
                     fontSize: 12,
                     fontFamily: 'MarkProBold',
                     letterSpacing: 2))),
+            const SizedBox(height: 15),
         TextButton(
             onPressed: () {
               Navigator.push(context,
@@ -53,7 +59,7 @@ class _MainScreenState extends State<MainScreen> {
             child: const Text('Parent',
                 style: TextStyle(
                     fontSize: 12, fontFamily: 'MarkProBold', letterSpacing: 2)))
-      ])),
+          ])),
     );
   }
 }
