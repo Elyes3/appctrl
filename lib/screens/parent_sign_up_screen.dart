@@ -168,7 +168,6 @@ class _ParentSignUpScreenState extends State<ParentSignUpScreen> {
                                           _formKey.currentState!.save();
                                           Message message =
                                               await _auth.registerParent(
-                                                  context,
                                                   _data["firstName"],
                                                   _data["lastName"],
                                                   _data["email"],

@@ -23,7 +23,6 @@ class _AppStartupState extends State<AppStartup> {
 
   @override
   Widget build(BuildContext context) {
-    final UserProvider userProvider = Provider.of<UserProvider>(context);
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, _) {

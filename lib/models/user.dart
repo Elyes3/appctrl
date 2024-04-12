@@ -6,11 +6,12 @@ class Parent {
 }
 
 class Child {
+  String childId;
   String firstName;
   String lastName;
   String email;
   String parentId;
-  Child(this.firstName, this.lastName, this.email, this.parentId);
+  Child(this.childId, this.firstName, this.lastName, this.email, this.parentId);
 }
 
 class UserData {
@@ -19,7 +20,7 @@ class UserData {
   String firstName;
   String lastName;
   bool isParent;
-  List<String>? childrenIds;
+  List<dynamic>? childrenIds;
   UserData(this.uid, this.email, this.firstName, this.childrenIds,
       this.lastName, this.isParent);
 }

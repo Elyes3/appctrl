@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentalctrl/providers/children_provider.dart';
 import 'package:parentalctrl/providers/user_provider.dart';
 import 'package:parentalctrl/screens/login_screen.dart';
+import 'package:parentalctrl/screens/parent_app_limitor_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:parentalctrl/services/children_service.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +24,21 @@ class ParentHomeScreen extends StatefulWidget {
 }
 
 class _ParentHomeScreen extends State<ParentHomeScreen> {
+  AuthService authService = AuthService();
+  ChildrenService childrenService = ChildrenService();
+  @override
+  void initState() {
+    super.initState();
+    final UserProvider userProvider =
+        Provider.of<UserProvider>(context, listen: false);
+    final ChildrenProvider childrenProvider =
+        Provider.of<ChildrenProvider>(context, listen: false);
+    List<dynamic>? childrenIds = userProvider.user!.childrenIds;
+    childrenProvider.fetchParentChildren(childrenIds);
+  }
+
   @override
   Widget build(BuildContext context) {
-    AuthService authService = AuthService();
-    ChildrenService childrenService = ChildrenService();
     final UserProvider userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
         backgroundColor: Colors.grey[10],
@@ -50,36 +62,45 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
           backgroundColor: Colors.blue,
         ),
         body: Consumer<ChildrenProvider>(
-            builder: (context, model, _) => FutureBuilder(
-                future: childrenService.fetchParentChildren(
-                    userProvider.user!.uid, context),
-                builder: ((context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  } else {
-                    return ListView.builder(
-                      itemCount: model.children.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          title: Text(
-                              '${model.children[index].firstName} ${model.children[index].lastName}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'MarkPro',
-                                  fontSize: 17)),
-                          subtitle: Text(
-                            model.children[index].email,
-                            style: const TextStyle(
-                                fontSize: 14, fontFamily: 'MarkPro'),
-                          ),
-                          trailing: const Icon(Icons.arrow_right),
-                        );
-                      },
-                    );
-                  }
-                })))
+          builder: (context, model, _) {
+          if (model.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else {
+            return ListView.builder(
+              itemCount: model.children.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(
+                      '${model.children[index].firstName} ${model.children[index].lastName}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'MarkPro',
+                          fontSize: 17)),
+                  subtitle: Text(
+                    model.children[index].email,
+                    style: const TextStyle(fontSize: 14, fontFamily: 'MarkPro'),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.east),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ParentAppLimitorScreen(
+                                  uid: model.children[index].childId,
+                                  fullName:
+                                      '${model.children[index].firstName} ${model.children[index].lastName}')));
+                    },
+                  ),
+                );
+              },
+            );
+          }
+        }));
+  }
+}
 
         // body: Consumer<PhoneProvider>(
         //   builder: (context, model, _) {
@@ -267,7 +288,4 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
         //           ));
         //     }
         //   },
-        // ),
-        );
-  }
-}
+        // )

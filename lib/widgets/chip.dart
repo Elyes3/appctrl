@@ -10,7 +10,8 @@ class CustomChip extends StatelessWidget {
   final String fontFamily;
   final double borderRadius;
   const CustomChip(
-      {required this.text,
+      {super.key,
+      required this.text,
       required this.textColor,
       required this.backgroundColor,
       required this.hasBorder,

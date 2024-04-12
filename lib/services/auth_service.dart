@@ -1,3 +1,4 @@
+import 'package:device_apps/device_apps.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -21,19 +22,48 @@ class AuthService {
       Map<String, dynamic> customClaims =
           tokenResult.claims as Map<String, dynamic>;
       bool isParent = customClaims['isParent'] ?? false;
+      if (!isParent) {
+        List<Application> apps = await DeviceApps.getInstalledApplications(
+            onlyAppsWithLaunchIntent: true,
+            includeSystemApps: true,
+            includeAppIcons: true);
+        for (var app in apps) {
+          if (app.appName == 'YouTube' ||
+              app.appName == 'Facebook' ||
+              app.appName == 'Instagram') {
+            ref
+                .child('children')
+                .child(user.uid)
+                .child('apps')
+                .child(app.appName)
+                .set({
+              'name': app.appName,
+              'packageName': app.packageName,
+              'installedOn': app.installTimeMillis,
+              'enabled': app.enabled,
+              'dataDir': app.dataDir,
+              'updatedOn': app.updateTimeMillis,
+            });
+          }
+        }
+      }
       DataSnapshot snapshot = await ref
           .child(isParent ? 'parents' : 'children')
           .child(user.uid)
           .get();
       if (snapshot.exists) {
+        List<dynamic> childrenIds = [];
         Map<String, dynamic> userData =
             Map<String, dynamic>.from(snapshot.value as Map);
+        if (userData["childrenIds"] != null) {
+          childrenIds = userData["childrenIds"];
+        }
         userProvider.setUser(UserData(
             user.uid,
             userData['email'],
             userData['firstName'],
+            isParent ? childrenIds : null,
             userData['lastName'],
-            isParent ? userData["childrenIds"] : null,
             isParent));
       } else {
         return 'Error while fetching user data !';
@@ -70,7 +100,7 @@ class AuthService {
     });
   }
 
-  Future<Message> registerParent(BuildContext context, String? firstName,
+  Future<Message> registerParent(String? firstName,
       String? lastName, String? email, String? password) async {
     String endpoint = 'users/parent/signup';
     if (email != null &&
