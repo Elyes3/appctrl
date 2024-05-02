@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:parentalctrl/models/phone.dart';
-import 'package:parentalctrl/providers/children_provider.dart';
 import 'package:parentalctrl/providers/user_provider.dart';
 import 'package:parentalctrl/screens/login_screen.dart';
-import 'package:parentalctrl/services/auth_service.dart';
-import 'package:parentalctrl/widgets/chip.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class ChildHomeScreen extends StatefulWidget {
   const ChildHomeScreen({super.key});
@@ -27,7 +22,6 @@ class ChildHomeScreen extends StatefulWidget {
 class _ChildHomeScreen extends State<ChildHomeScreen> {
   @override
   Widget build(BuildContext context) {
-    AuthService authService = AuthService();
     final UserProvider userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       backgroundColor: Colors.grey[10],
@@ -36,8 +30,7 @@ class _ChildHomeScreen extends State<ChildHomeScreen> {
         actions: <Widget>[
           IconButton(
               onPressed: () {
-                userProvider.setUser(null);
-                authService.signOut();
+                userProvider.signOut();
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

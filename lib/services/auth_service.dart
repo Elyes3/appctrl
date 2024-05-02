@@ -1,21 +1,25 @@
-import 'package:device_apps/device_apps.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:parentalctrl/models/message.dart';
 import 'package:parentalctrl/models/user.dart';
-import 'package:parentalctrl/providers/user_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:parentalctrl/services/permissions_service.dart';
+import 'package:parentalctrl/services/application_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 // firebase authentication instance
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
-  Future<String> fetchUserDataByRole(
-      User? user, UserProvider userProvider) async {
+  final service = FlutterBackgroundService();
+
+  Future<UserData> fetchUserDataByRole(User? user) async {
     print("GOT HERE");
     if (user != null) {
       IdTokenResult tokenResult = await user.getIdTokenResult();
@@ -23,29 +27,7 @@ class AuthService {
           tokenResult.claims as Map<String, dynamic>;
       bool isParent = customClaims['isParent'] ?? false;
       if (!isParent) {
-        List<Application> apps = await DeviceApps.getInstalledApplications(
-            onlyAppsWithLaunchIntent: true,
-            includeSystemApps: true,
-            includeAppIcons: true);
-        for (var app in apps) {
-          if (app.appName == 'YouTube' ||
-              app.appName == 'Facebook' ||
-              app.appName == 'Instagram') {
-            ref
-                .child('children')
-                .child(user.uid)
-                .child('apps')
-                .child(app.appName)
-                .set({
-              'name': app.appName,
-              'packageName': app.packageName,
-              'installedOn': app.installTimeMillis,
-              'enabled': app.enabled,
-              'dataDir': app.dataDir,
-              'updatedOn': app.updateTimeMillis,
-            });
-          }
-        }
+        getInstalledApps(user.uid, ref);
       }
       DataSnapshot snapshot = await ref
           .child(isParent ? 'parents' : 'children')
@@ -58,50 +40,58 @@ class AuthService {
         if (userData["childrenIds"] != null) {
           childrenIds = userData["childrenIds"];
         }
-        userProvider.setUser(UserData(
+        return UserData(
             user.uid,
             userData['email'],
             userData['firstName'],
             isParent ? childrenIds : null,
             userData['lastName'],
-            isParent));
+            isParent,
+            'Logged In Successfully!');
       } else {
-        return 'Error while fetching user data !';
+        return UserData.errorMessage('Error while fetching user data !');
       }
     } else {
-      userProvider.setUser(null);
-      return 'This user does not exist !';
+      return UserData.errorMessage('This user does not exist !');
     }
-    print("GOT HERE");
-    return 'Logged In Successfully !';
   }
 
-  Future<String> login(
-      BuildContext context, String email, String password) async {
+  Future<UserData> login(String email, String password) async {
     try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: email.trim(), password: password.trim());
-      User? user = userCredential.user;
-
-      String response = await fetchUserDataByRole(user, userProvider);
-      return response;
+      PermissionService permissionService = PermissionService();
+      bool usageStatsPermissionGranted =
+          await permissionService.checkUsageStatsPermissions();
+      bool overlayPermissionGranted =
+          await permissionService.checkOverlayPermissions();
+      if (!usageStatsPermissionGranted) {
+        usageStatsPermissionGranted =
+            await permissionService.grantUsageStatsPermissions();
+      }
+      if (!overlayPermissionGranted) {
+        overlayPermissionGranted =
+            await permissionService.grantOverlayPermissions();
+      }
+      if (usageStatsPermissionGranted && usageStatsPermissionGranted) {
+        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+            email: email.trim(), password: password.trim());
+        User? user = userCredential.user;
+        final SharedPreferences sharedPreferences =
+            await SharedPreferences.getInstance();
+        sharedPreferences.setString('user_id', userCredential.user?.uid ?? '');
+        UserData response = await fetchUserDataByRole(user);
+        return response;
+      } else {
+        return UserData.errorMessage(
+            'Please grant the permissions in order to continue');
+      }
     } on FirebaseAuthException catch (error) {
-      return error.message ?? '';
+      return UserData.errorMessage(error.message ?? '');
     }
   }
 
-  void getAuthenticationStatus(BuildContext context) {
-    print("caLLed");
-    UserProvider userProvider =
-        Provider.of<UserProvider>(context, listen: false);
-    _auth.authStateChanges().listen((User? user) async {
-      await fetchUserDataByRole(user, userProvider);
-    });
-  }
 
-  Future<Message> registerParent(String? firstName,
-      String? lastName, String? email, String? password) async {
+  Future<Message> registerParent(String? firstName, String? lastName,
+      String? email, String? password) async {
     String endpoint = 'users/parent/signup';
     if (email != null &&
         email.isNotEmpty &&
@@ -111,36 +101,25 @@ class AuthService {
         firstName.isNotEmpty &&
         lastName != null &&
         lastName.isNotEmpty) {
-      String? baseUrl = dotenv.env['BASE_URL'];
-      var url = Uri.parse('$baseUrl$endpoint');
-      try {
-        var response = await http.post(url,
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: json.encode({
-              "email": email,
-              "password": password,
-              "firstName": firstName,
-              "lastName": lastName
-            }));
-        dynamic jsonResponse = json.decode(response.body);
-        return Message(jsonResponse['message'], response.statusCode);
-      } catch (e) {
-        return Message(e.toString(), null);
-      }
+      print(email);
+      print(firstName);
+      print(lastName);
+      print(password);
+      String body = json.encode({
+        "email": email,
+        "password": password,
+        "firstName": firstName,
+        "lastName": lastName
+      });
+      Message response = await fetchRegisterApi(body, endpoint);
+      return response;
     } else {
       return Message('Please fill the missing fields !', null);
     }
   }
 
-  Future<Message> registerChild(
-      BuildContext context,
-      String? firstName,
-      String? lastName,
-      String? parentEmail,
-      String? email,
-      String? password) async {
+  Future<Message> registerChild(String? firstName, String? lastName,
+      String? parentEmail, String? email, String? password) async {
     String endpoint = 'users/child/signup';
     if (email != null &&
         email.isNotEmpty &&
@@ -152,32 +131,44 @@ class AuthService {
         lastName.isNotEmpty &&
         parentEmail != null &&
         parentEmail.isNotEmpty) {
-      try {
-        String? baseUrl = dotenv.env['BASE_URL'];
-        var url = Uri.parse('$baseUrl$endpoint');
-        var response = await http.post(url,
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: json.encode({
-              "email": email,
-              "password": password,
-              "parentEmail": parentEmail,
-              "firstName": firstName,
-              "lastName": lastName
-            }));
-        dynamic jsonResponse = json.decode(response.body);
-        return Message(jsonResponse['message'], response.statusCode);
-      } catch (e) {
-        return Message(e.toString(), null);
-      }
+      String body = json.encode({
+        "email": email,
+        "password": password,
+        "parentEmail": parentEmail,
+        "firstName": firstName,
+        "lastName": lastName
+      });
+      Message response = await fetchRegisterApi(body, endpoint);
+      return response;
     } else {
       return Message('Please fill the missing fields !', null);
     }
   }
 
+  Future<Message> fetchRegisterApi(String body, String endpoint) async {
+    String endpoint = 'users/child/signup';
+    try {
+      String? baseUrl = dotenv.env['BASE_URL'];
+      var url = Uri.parse('$baseUrl/$endpoint');
+      print(url);
+      var response = await http.post(url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: body);
+      dynamic jsonResponse = json.decode(response.body);
+      return Message(jsonResponse['message'], response.statusCode);
+    } catch (e) {
+      return Message(e.toString(), null);
+    }
+  }
+
   Future<bool> signOut() async {
     try {
+      bool isRunning = await service.isRunning();
+      if (isRunning) {
+        service.invoke("STOP_SERVICE");
+      }
       await _auth.signOut();
       return true;
     } catch (error) {

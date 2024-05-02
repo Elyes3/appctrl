@@ -14,7 +14,39 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
+@pragma("vm:entry-point")
+void overlayMain() async {
+  debugPrint("Starting Alerting Window Isolate!");
+  WidgetsFlutterBinding.ensureInitialized();
 
+  runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MaterialApp(
+        home: Scaffold(
+          body:
+              BlackBackgroundScreen(), // Your custom widget for white background screen
+        ),
+      )));
+}
+
+class BlackBackgroundScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black, // Background color
+      child: Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Image.asset('assets/error-bot.png'),
+          const Text(
+            'An error occured !',
+            style: TextStyle(fontSize: 24.0, color: Colors.white),
+          ), 
+        
+        ]),
+      ),
+    );
+  }
+}
 ChildrenService _childrenService = ChildrenService();
 
 class MyApp extends StatelessWidget {

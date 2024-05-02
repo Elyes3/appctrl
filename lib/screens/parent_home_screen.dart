@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentalctrl/providers/children_provider.dart';
 import 'package:parentalctrl/providers/user_provider.dart';
 import 'package:parentalctrl/screens/login_screen.dart';
-import 'package:parentalctrl/screens/parent_app_limitor_screen.dart';
+import 'package:parentalctrl/screens/children_apps_screen.dart';
 import 'package:parentalctrl/services/auth_service.dart';
 import 'package:parentalctrl/services/children_service.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +43,7 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
     return Scaffold(
         backgroundColor: Colors.grey[10],
         appBar: AppBar(
-          title: const Text('Home'),
+          title: const Text('Children'),
           actions: <Widget>[
             IconButton(
                 onPressed: () {
@@ -61,8 +61,7 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
               color: Colors.white, fontFamily: 'MarkPro', fontSize: 25),
           backgroundColor: Colors.blue,
         ),
-        body: Consumer<ChildrenProvider>(
-          builder: (context, model, _) {
+        body: Consumer<ChildrenProvider>(builder: (context, model, _) {
           if (model.isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -88,10 +87,8 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => ParentAppLimitorScreen(
-                                  uid: model.children[index].childId,
-                                  fullName:
-                                      '${model.children[index].firstName} ${model.children[index].lastName}')));
+                              builder: (context) => ChildrenAppsScreen(
+                                  selectedChild: model.children[index])));
                     },
                   ),
                 );

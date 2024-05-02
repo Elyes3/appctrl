@@ -3,7 +3,6 @@ import 'package:parentalctrl/providers/user_provider.dart';
 import 'package:parentalctrl/screens/child_home_screen.dart';
 import 'package:parentalctrl/screens/main_screen.dart';
 import 'package:parentalctrl/screens/parent_home_screen.dart';
-import 'package:parentalctrl/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _email = '';
   String _password = '';
-  final _auth = AuthService();
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -112,24 +110,33 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onPressed: () async {
                                         if (_formKey.currentState!.validate()) {
                                           _formKey.currentState!.save();
-                                          String message = await _auth.login(
-                                              context, _email, _password);
+                                          await userProvider.login(
+                                              _email, _password);
+                                          print(userProvider.user);
                                           if (!context.mounted) return;
-                                          if (userProvider.user != null) {
-                                            Navigator.pushAndRemoveUntil(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        !userProvider
-                                                            .user!.isParent
-                                                        ? const ChildHomeScreen()
-                                                        : const ParentHomeScreen()),
-                                                (Route route) => false);
-                                          }
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(
-                                            content: Text(message),
+                                            content: Text(
+                                                userProvider.user!.message!),
                                           ));
+                                          if (userProvider.user != null) {
+                                            if (userProvider.user!.uid !=
+                                                null) {
+                                              Navigator.pushAndRemoveUntil(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) => (userProvider
+                                                                      .user!
+                                                                      .uid !=
+                                                                  null &&
+                                                              !userProvider
+                                                                  .user!
+                                                                  .isParent!)
+                                                          ? const ChildHomeScreen()
+                                                          : const ParentHomeScreen()),
+                                                  (Route route) => false);
+                                            }
+                                          }
                                         }
                                       },
                                       style: const ButtonStyle(

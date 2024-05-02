@@ -202,7 +202,6 @@ class _ChildSignUpScreenState extends State<ChildSignUpScreen> {
                                           _formKey.currentState!.save();
                                           Message message =
                                               await _auth.registerChild(
-                                                  context,
                                                   _data["firstName"],
                                                   _data["lastName"],
                                                   _data["parentEmail"],
