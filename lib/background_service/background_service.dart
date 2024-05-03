@@ -12,7 +12,7 @@ Future<void> restrictApps() async {
       autoStart: true,
       isForegroundMode: true,
       autoStartOnBoot: true,
-      initialNotificationTitle: "Flutter Challenge (background).",
+      initialNotificationTitle: "App Control",
       initialNotificationContent: "",
     ),
     iosConfiguration: IosConfiguration(),

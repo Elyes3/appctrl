@@ -16,6 +16,8 @@ const String kill = 'STOP_SERVICE';
 // FUNCTIONALITY FOR RESTRICTION.
 List<UsageInfo> oldStats = [];
 String openedApp = '';
+int FULL_DAY = 86400000;
+Map<String, int> flags = {};
 @pragma('vm:entry-point')
 onServiceLaunch(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,14 +53,19 @@ fetchChild(List<UsageInfo> oldStatsPass) async {
         Map<String, dynamic>.from(dataSnapshot.value as Map);
     Map<dynamic, dynamic> apps = childMap["apps"] ?? {};
     print("ALL APPS IN INTERATIONS $apps");
-    apps.removeWhere((key, value) => apps[key]["enabled"] == false);
+    apps.removeWhere((key, value) => apps[key]["enabled"] == true);
     if (apps.isNotEmpty) {
       UsageService usageService = UsageService();
       List<UsageInfo> currentStats =
           await usageService.getRestrictedAppsUsageForToday(apps);
       for (String key in apps.keys) {
         App app = appFromJson(apps[key]);
-
+        if (!flags.containsKey(app.name)) {
+          flags[app.name] = 0;
+        }
+        if (app.consumedTime == FULL_DAY) {
+          ref.child('children/$uid/apps/${app.name}/consumedTime').set(0);
+        }
         List<UsageInfo> currentApp = currentStats
             .where((usageStat) => usageStat.packageName == app.packageName)
             .toList();
@@ -70,6 +77,7 @@ fetchChild(List<UsageInfo> oldStatsPass) async {
         print(
             'OLD APP : firstTimeStamp : ${oldApp[0].firstTimeStamp}, lastTimeStamp: ${oldApp[0].lastTimeStamp}, lastTimeUsed: ${oldApp[0].lastTimeUsed},TotalTimeInForeground: ${oldApp[0].totalTimeInForeground}');
         if (app.untilReactivation == true) {
+          flags[app.name] = 0;
           if (int.parse(currentApp[0].lastTimeUsed!) !=
               int.parse(oldApp[0].lastTimeUsed!)) {
             if (int.parse(currentApp[0].totalTimeInForeground ?? '0') -
@@ -77,32 +85,57 @@ fetchChild(List<UsageInfo> oldStatsPass) async {
                 200) {
               FlutterOverlayWindow.showOverlay();
               print("YOUTUBE OPEN");
-              oldStats = currentStats;
             } else {
               FlutterOverlayWindow.closeOverlay();
               print("YOUTUBE CLOSED");
             }
           }
         } else {
-          if (app.time <
-              int.parse(currentApp[0].totalTimeInForeground ?? '0')) {
+          if (app.time > app.consumedTime) {
+            flags[app.name] = 0;
             if (int.parse(currentApp[0].lastTimeUsed!) !=
                 int.parse(oldApp[0].lastTimeUsed!)) {
               if (int.parse(currentApp[0].totalTimeInForeground ?? '0') -
                       int.parse(oldApp[0].totalTimeInForeground ?? '0') <
                   200) {
-                print("YOUTUBE OPEN");
+                print("YOUTUBE OPENED FOR TIME ");
                 openedApp = app.name;
               } else {
                 print("YOUTUBE CLOSED");
                 openedApp = '';
               }
             }
+          } else {
+            if (flags[app.name] == 0) {
+              FlutterOverlayWindow.showOverlay();
+              flags[app.name] = flags[app.name]! + 1;
+            }
+            print("GOING IN ELSE");
+            if (int.parse(currentApp[0].lastTimeUsed!) !=
+                int.parse(oldApp[0].lastTimeUsed!)) {
+              if (int.parse(currentApp[0].totalTimeInForeground ?? '0') -
+                      int.parse(oldApp[0].totalTimeInForeground ?? '0') <
+                  200) {
+                print("WE ARE BLOCKING THE APP FOR TIME");
+                openedApp = app.name;
+                FlutterOverlayWindow.showOverlay();
+              } else {
+                print("WE AREN'T BLOCKING ANYTHING");
+                openedApp = '';
+                FlutterOverlayWindow.closeOverlay();
+              }
+            }
           }
         }
       }
-
       oldStats = currentStats;
+      if (openedApp.isNotEmpty) {
+        DataSnapshot dataSnapshot =
+            await ref.child('children/$uid/apps/$openedApp/consumedTime').get();
+        await ref
+            .child('children/$uid/apps/$openedApp/consumedTime')
+            .set((dataSnapshot.value as int) + 3000);
+      }
     }
   }
 }
