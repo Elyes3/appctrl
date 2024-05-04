@@ -29,16 +29,5 @@ class ChildrenProvider with ChangeNotifier {
       String time, App selectedApp) async {
     await service.updateRestrictions(
         selectedChild, untilReactivation, time, selectedApp);
-    _children = _children.map((Child child) {
-      if (selectedChild.childId == child.childId) {
-        for (App app in child.apps) {
-          if (app.name == selectedApp.name) {
-            app = selectedApp;
-          }
-        }
-      }
-      return child;
-    }).toList();
-    notifyListeners();
   }
 }

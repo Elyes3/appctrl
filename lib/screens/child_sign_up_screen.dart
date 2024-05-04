@@ -25,6 +25,9 @@ class _ChildSignUpScreenState extends State<ChildSignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          iconTheme: const IconThemeData(
+            color: Colors.white, //change your color here
+          ),
           title: const Text(
             'Child Sign Up',
             style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),

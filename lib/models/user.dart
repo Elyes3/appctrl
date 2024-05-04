@@ -14,9 +14,14 @@ class App {
   bool untilReactivation;
   int time;
   int consumedTime;
+  bool isUsed;
   String packageName;
   App(this.dataDir, this.enabled, this.installedOn, this.updatedOn, this.name,
-      this.untilReactivation, this.time, this.packageName, this.consumedTime);
+      this.untilReactivation,
+      this.time,
+      this.packageName,
+      this.consumedTime,
+      this.isUsed);
 }
 
 class Child {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:parentalctrl/firebase_options.dart';
 import 'package:parentalctrl/providers/children_provider.dart';
 import 'package:parentalctrl/providers/user_provider.dart';
@@ -14,6 +15,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
+
 @pragma("vm:entry-point")
 void overlayMain() async {
   debugPrint("Starting Alerting Window Isolate!");
@@ -40,13 +42,24 @@ class BlackBackgroundScreen extends StatelessWidget {
           const Text(
             'An error occured !',
             style: TextStyle(fontSize: 24.0, color: Colors.white),
-          ), 
-        
+          ),
+          TextButton(
+              child: Text("CLICK ME"),
+              onPressed: () {
+                FlutterOverlayWindow.closeOverlay();
+              },
+              style: const ButtonStyle(
+                padding: MaterialStatePropertyAll<EdgeInsets>(
+                    EdgeInsets.fromLTRB(20, 15, 20, 15)),
+                foregroundColor: MaterialStatePropertyAll<Color?>(Colors.white),
+                backgroundColor: MaterialStatePropertyAll<Color?>(Colors.blue),
+              )),
         ]),
       ),
     );
   }
 }
+
 ChildrenService _childrenService = ChildrenService();
 
 class MyApp extends StatelessWidget {

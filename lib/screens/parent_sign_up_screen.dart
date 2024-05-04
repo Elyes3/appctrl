@@ -24,6 +24,9 @@ class _ParentSignUpScreenState extends State<ParentSignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          iconTheme: const IconThemeData(
+            color: Colors.white, //change your color here
+          ),
           title: const Text(
             'App Control',
             style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),

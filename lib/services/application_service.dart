@@ -1,6 +1,5 @@
 import 'package:device_apps/device_apps.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:parentalctrl/models/user.dart';
 
 Future<void> getInstalledApps(String uid, DatabaseReference ref) async {
   List<Application> apps = await DeviceApps.getInstalledApplications(
@@ -28,6 +27,7 @@ Future<void> getInstalledApps(String uid, DatabaseReference ref) async {
           'untilReactivation': false,
           'time': 0,
           'consumedTime': 0,
+          'isUsed': false,
         });
       }
     }

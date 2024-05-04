@@ -1,9 +1,44 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:parentalctrl/models/user.dart';
+import 'package:parentalctrl/providers/children_provider.dart';
 import 'package:parentalctrl/utils/date.dart';
 
 class ChildrenService {
   final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
+  void listenForChildrenUpdates(
+      String parentId, ChildrenProvider childrenProvider) {
+    final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
+    ref.child("parents/$parentId/childrenIds").onValue.listen((event) async {
+      print(parentId);
+      if (parentId != null) {
+        final DataSnapshot dataSnapshot =
+            await ref.child("parents/$parentId").get();
+        final parentData = dataSnapshot.value as Map;
+        final childrenIds = parentData["childrenIds"];
+        if (childrenIds != null) {
+          await childrenProvider.fetchParentChildren(parentData["childrenIds"]);
+        }
+      }
+    });
+  }
+
+  void listenForChildAppUpdate(
+      String parentId, String childId, ChildrenProvider childrenProvider) {
+    final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
+    ref.child("children/$childId/apps").onValue.listen((event) async {
+      print(parentId);
+      if (parentId != null) {
+        final DataSnapshot dataSnapshot =
+            await ref.child("parents/$parentId").get();
+        final parentData = dataSnapshot.value as Map;
+        final childrenIds = parentData["childrenIds"];
+        if (childrenIds != null) {
+          await childrenProvider.fetchParentChildren(parentData["childrenIds"]);
+        }
+      }
+    });
+  }
+
   Future<List<Child>> fetchParentChildren(List<dynamic>? childrenIds) async {
     List<Child> children = [];
     print("CALLED CHILD");
@@ -15,6 +50,7 @@ class ChildrenService {
         Map<String, dynamic> childMap =
             Map<String, dynamic>.from(dataSnapshot.value as Map);
         Map<dynamic, dynamic> apps = childMap["apps"] ?? {};
+        print(apps);
         List<App> appsList = [];
         if (apps.isNotEmpty) {
           apps.forEach((key, value) {
@@ -27,8 +63,12 @@ class ChildrenService {
                 value["untilReactivation"],
                 value["time"],
                 value["packageName"],
-                value["consumedTime"]));
+                value["consumedTime"],
+                value["isUsed"]));
           });
+        }
+        for (App app in appsList) {
+          print('${app.name} ${app.enabled}');
         }
         Child child = Child(
             childId,
@@ -46,15 +86,19 @@ class ChildrenService {
   updateRestrictions(
       Child child, bool untilReactivation, String time, App app) async {
     app.untilReactivation = untilReactivation;
-    app.enabled = false;
+    app.enabled =
+        (app.untilReactivation == false && (time == '00:00' || time.isEmpty))
+            ? true
+            : false;
     app.time = timeToMilliseconds(time);
     for (int i = 0; i < child.apps.length; i++) {
       if (child.apps[i].name == app.name) {
         child.apps[i] = app;
       }
     }
-    print("3");
+
     await ref.child('children/${child.childId}').set(childToJson(child));
+    print("UPDATED");
   }
 }
 
@@ -82,6 +126,7 @@ Map<String, dynamic> appsToJson(List<App> apps) {
     jsonApp["time"] = app.time;
     jsonApp["untilReactivation"] = app.untilReactivation;
     jsonApp["consumedTime"] = app.consumedTime;
+    jsonApp["isUsed"] = app.isUsed;
     jsonApps[app.name] = jsonApp;
   }
   return jsonApps;
@@ -97,5 +142,6 @@ App appFromJson(Map<dynamic, dynamic> app) {
       app["untilReactivation"],
       app["time"],
       app["packageName"],
-      app["consumedTime"]);
+      app["consumedTime"],
+      app["isUsed"]);
 }

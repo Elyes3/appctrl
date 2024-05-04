@@ -30,6 +30,9 @@ class _AppStartupState extends State<AppStartup> {
         if (userProvider.isLoading == true) {
           return Scaffold(
               appBar: AppBar(
+                iconTheme: const IconThemeData(
+                  color: Colors.white, //change your color here
+                ),
                 title: const Text('Loading...'),
                 titleTextStyle: const TextStyle(
                     color: Colors.white, fontFamily: 'MarkPro', fontSize: 25),

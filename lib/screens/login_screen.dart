@@ -22,6 +22,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
         appBar: AppBar(
+          iconTheme: const IconThemeData(
+            color: Colors.white, //change your color here
+          ),
           title: const Text(
             'Login',
             style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),

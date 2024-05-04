@@ -26,6 +26,9 @@ class _ChildHomeScreen extends State<ChildHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[10],
       appBar: AppBar(
+        iconTheme: const IconThemeData(
+          color: Colors.white, //change your color here
+        ),
         title: const Text('Home'),
         actions: <Widget>[
           IconButton(
@@ -36,13 +39,23 @@ class _ChildHomeScreen extends State<ChildHomeScreen> {
                     MaterialPageRoute(
                         builder: (context) => const LoginScreen()));
               },
+              color: Colors.white,
               icon: const Icon(Icons.logout))
         ],
         titleTextStyle: const TextStyle(
             color: Colors.white, fontFamily: 'MarkPro', fontSize: 25),
         backgroundColor: Colors.blue,
       ),
-      body: const Text("Hello Child"),
+      body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Image.asset("assets/familyshield.jpeg"),
+        const Text(
+          "No data available",
+          style: TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
+              fontFamily: "MarkPro"),
+        ),
+      ]),
 
       // body: Consumer<PhoneProvider>(
       //   builder: (context, model, _) {

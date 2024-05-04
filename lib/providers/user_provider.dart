@@ -32,8 +32,10 @@ class UserProvider with ChangeNotifier {
     print(userData.message);
     setUser(userData);
     notifyListeners();
-    if (userData.uid != null && userData.isParent == false) {
-      await restrictApps();
+    if (userData.uid != null) {
+      if (userData.isParent == false) {
+        await restrictApps();
+      }
     }
   }
 

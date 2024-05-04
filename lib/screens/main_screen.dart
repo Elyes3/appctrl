@@ -14,6 +14,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(
+          color: Colors.white, //change your color here
+        ),
         title: const Text(
           'Choose a user',
           style: TextStyle(color: Colors.white, fontFamily: 'MarkPro'),
