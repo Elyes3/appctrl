@@ -1,32 +1,31 @@
+import 'package:parentalctrl/models/usageinformation.dart';
 import 'package:usage_stats/usage_stats.dart';
 
 class UsageService {
-  Future<List<UsageInfo>> getRestrictedAppsUsageForToday(
+  Future<List<UserInformation>> getRestrictedAppsUsageForToday(
       Map<dynamic, dynamic> restrictedApps) async {
-    print("HELLO GOT HERE");
     DateTime now = DateTime.now();
     DateTime startDate = DateTime(now.year, now.month, now.day, 0, 0, 0);
     DateTime endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    List<UsageInfo> usageStats =
+    List<UsageInfo> usageInformations =
         await UsageStats.queryUsageStats(startDate, endDate);
-    if (restrictedApps.isNotEmpty) {
-      for (String key in restrictedApps.keys) {
-        print("IN STATISTICS ${restrictedApps[key]}");
-      }
-      List<UsageInfo> usageStatsResult = [];
-      for (String key in restrictedApps.keys) {
-        for (UsageInfo usageStat in usageStats) {
-          if (usageStat.packageName == restrictedApps[key]["packageName"]) {
-            usageStatsResult.add(usageStat);
-          }
+    List<UserInformation> restrictedUsageInformations = [];
+    for (String key in restrictedApps.keys) {
+      for (UsageInfo usageInformation in usageInformations) {
+        if (usageInformation.packageName ==
+            restrictedApps[key]["packageName"]) {
+          restrictedUsageInformations.add(UserInformation(
+              usageInformation.lastTimeUsed,
+              usageInformation.totalTimeInForeground,
+              restrictedApps[key]["name"],
+              usageInformation.packageName,
+              restrictedApps[key]["enabled"],
+              restrictedApps[key]["time"],
+              restrictedApps[key]["consumedTime"],
+              restrictedApps[key]["untilReactivation"]));
         }
       }
-      for (UsageInfo usageStatResult in usageStatsResult) {
-        print(
-            'firstTimeStamp : ${usageStatResult.firstTimeStamp}, lastTimeStamp: ${usageStatResult.lastTimeStamp}, lastTimeUsed: ${usageStatResult.lastTimeUsed},TotalTimeInForeground: ${usageStatResult.totalTimeInForeground}');
-        return usageStats;
-      }
     }
-    return [];
+    return restrictedUsageInformations;
   }
 }

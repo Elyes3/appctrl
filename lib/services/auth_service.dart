@@ -146,10 +146,8 @@ class AuthService {
   }
 
   Future<Message> fetchRegisterApi(String body, String endpoint) async {
-    String endpoint = 'users/child/signup';
     try {
-      String? baseUrl = dotenv.env['BASE_URL'];
-      var url = Uri.parse('$baseUrl/$endpoint');
+      var url = Uri.parse('http://192.168.1.4:5050/api/$endpoint');
       print(url);
       var response = await http.post(url,
           headers: <String, String>{
