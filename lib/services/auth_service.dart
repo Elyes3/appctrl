@@ -146,7 +146,7 @@ class AuthService {
   Future<Message> fetchRegisterApi(String body, String endpoint) async {
     try {
       var url =
-          Uri.parse('http://https://kidsguard-be.onrender.com/api/$endpoint');
+          Uri.parse('https://kidsguard-be.onrender.com/api/$endpoint');
       print(url);
       var response = await http.post(url,
           headers: <String, String>{
