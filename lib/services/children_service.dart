@@ -9,7 +9,6 @@ class ChildrenService {
       String parentId, ChildrenProvider childrenProvider) {
     final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
     ref.child("parents/$parentId/childrenIds").onValue.listen((event) async {
-      print(parentId);
       if (parentId != null) {
         final DataSnapshot dataSnapshot =
             await ref.child("parents/$parentId").get();
@@ -26,7 +25,6 @@ class ChildrenService {
       String parentId, String childId, ChildrenProvider childrenProvider) {
     final DatabaseReference ref = FirebaseDatabase.instance.ref("users");
     ref.child("children/$childId/apps").onValue.listen((event) async {
-      print(parentId);
       if (parentId != null) {
         final DataSnapshot dataSnapshot =
             await ref.child("parents/$parentId").get();
@@ -41,8 +39,6 @@ class ChildrenService {
 
   Future<List<Child>> fetchParentChildren(List<dynamic>? childrenIds) async {
     List<Child> children = [];
-    print("CALLED CHILD");
-    print(childrenIds);
     if (childrenIds != null) {
       for (var childId in childrenIds) {
         DatabaseEvent event = await ref.child('children/$childId').once();
@@ -50,7 +46,6 @@ class ChildrenService {
         Map<String, dynamic> childMap =
             Map<String, dynamic>.from(dataSnapshot.value as Map);
         Map<dynamic, dynamic> apps = childMap["apps"] ?? {};
-        print(apps);
         List<App> appsList = [];
         if (apps.isNotEmpty) {
           apps.forEach((key, value) {
@@ -66,9 +61,6 @@ class ChildrenService {
                 value["consumedTime"],
                 value["isUsed"]));
           });
-        }
-        for (App app in appsList) {
-          print('${app.name} ${app.enabled}');
         }
         Child child = Child(
             childId,
@@ -98,7 +90,6 @@ class ChildrenService {
     }
 
     await ref.child('children/${child.childId}').set(childToJson(child));
-    print("UPDATED");
   }
 }
 

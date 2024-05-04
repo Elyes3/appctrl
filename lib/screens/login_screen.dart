@@ -115,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                           _formKey.currentState!.save();
                                           await userProvider.login(
                                               _email, _password);
-                                          print(userProvider.user);
                                           if (!context.mounted) return;
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(

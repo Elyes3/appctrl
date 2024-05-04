@@ -19,7 +19,6 @@ class AuthService {
   final service = FlutterBackgroundService();
 
   Future<UserData> fetchUserDataByRole(User? user) async {
-    print("GOT HERE");
     if (user != null) {
       IdTokenResult tokenResult = await user.getIdTokenResult();
       Map<String, dynamic> customClaims =

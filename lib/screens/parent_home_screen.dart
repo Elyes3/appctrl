@@ -29,7 +29,6 @@ class _ParentHomeScreen extends State<ParentHomeScreen> {
   @override
   void initState() {
     super.initState();
-    print('INIT CALLED');
     final UserProvider userProvider =
         Provider.of<UserProvider>(context, listen: false);
     final ChildrenProvider childrenProvider =

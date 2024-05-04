@@ -15,7 +15,6 @@ class UserProvider with ChangeNotifier {
     _user = user;
     _isLoading = false;
     print(_isLoading);
-    print("Is notified");
     print(user?.uid);
     notifyListeners();
   }
